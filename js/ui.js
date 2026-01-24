@@ -60,7 +60,7 @@ class UI {
         ctx.font = UI_FONT;
         ctx.fillStyle = COLORS.TEXT;
         ctx.textAlign = 'center';
-        ctx.fillText('← → Adjust Angle  |  ↑ ↓ Adjust Power  |  SPACE Fire  |  P Pause', GAME_WIDTH / 2, GAME_HEIGHT - 15);
+        ctx.fillText('← → Adjust Angle  |  ↑ ↓ Adjust Power  |  SPACE Fire  |  P Pause  |  ESC Menu', GAME_WIDTH / 2, GAME_HEIGHT - 15);
     }
 
     drawMenu(menuState, selectedMap, selectedPlayers, aiSettings) {
@@ -245,9 +245,12 @@ class UI {
         ctx.font = '48px Arial';
         ctx.fillStyle = COLORS.TEXT;
         ctx.textAlign = 'center';
-        ctx.fillText('PAUSED', GAME_WIDTH / 2, GAME_HEIGHT / 2);
+        ctx.fillText('PAUSED', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 20);
 
         ctx.font = UI_FONT_LARGE;
-        ctx.fillText('Press P to Resume', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50);
+        ctx.fillText('Press P to Resume', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40);
+
+        ctx.font = UI_FONT;
+        ctx.fillText('Press ESC to Exit to Menu', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 80);
     }
 }

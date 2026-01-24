@@ -29,7 +29,28 @@ class InputHandler {
     }
 
     update(game) {
-        if (!game || game.state !== GAME_STATES.PLAYING) return;
+        if (!game) return;
+
+        // Allow pause/unpause in both PLAYING and PAUSED states
+        if (this.keys['p'] || this.keys['P']) {
+            this.keys['p'] = false;
+            this.keys['P'] = false;
+            if (game.state === GAME_STATES.PLAYING || game.state === GAME_STATES.PAUSED) {
+                game.togglePause();
+            }
+        }
+
+        // Allow exit to menu from PLAYING or PAUSED states
+        if (this.keys['Escape']) {
+            this.keys['Escape'] = false;
+            if (game.state === GAME_STATES.PLAYING || game.state === GAME_STATES.PAUSED) {
+                game.returnToMenu();
+                return;
+            }
+        }
+
+        // Don't process other inputs if not in PLAYING state
+        if (game.state !== GAME_STATES.PLAYING) return;
 
         const currentTank = game.getCurrentTank();
         if (!currentTank || !currentTank.isHuman() || game.projectiles.length > 0) return;
@@ -72,24 +93,11 @@ class InputHandler {
             }
         }
 
-        // Pause
-        if (this.keys['p'] || this.keys['P']) {
-            this.keys['p'] = false;
-            this.keys['P'] = false;
-            game.togglePause();
-        }
-
         // Toggle trajectory preview (if implemented)
         if (this.keys['t'] || this.keys['T']) {
             this.keys['t'] = false;
             this.keys['T'] = false;
             game.toggleTrajectoryPreview();
-        }
-
-        // Return to menu
-        if (this.keys['Escape']) {
-            this.keys['Escape'] = false;
-            game.returnToMenu();
         }
     }
 }

@@ -42,9 +42,11 @@ function gameLoop(currentTime) {
     const deltaTime = (currentTime - lastTime) / 1000;
     lastTime = currentTime;
 
-    // Update
+    // Update - always process input (for pause/unpause and exit)
+    inputHandler.update(game);
+
+    // Only update game logic if not paused
     if (game.state === GAME_STATES.PLAYING || game.state === GAME_STATES.PROJECTILE_FLYING) {
-        inputHandler.update(game);
         game.update();
     }
 
