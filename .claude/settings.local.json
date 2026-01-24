@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(lsof:*)",
+      "Bash(curl:*)",
+      "Bash(kill:*)",
+      "Bash(python3:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: Cool Bros Tanks - Artillery Game\n\nFeatures:\n- Full menu system with player selection \\(2-8 players\\)\n- AI difficulty configuration \\(Human, Easy, Normal, Hard\\)\n- 5 different maps \\(Flat Plains, Rolling Hills, Mountain Range, Canyon, Plateau\\)\n- 3 weapon types \\(Missile, Cluster Bomb, Bouncing Round\\)\n- Doubled damage values\n- Ricochet physics off screen edges\n- One shot per turn \\(prevents spamming\\)\n- Exit to menu with ESC key\n- Game ends if all humans are killed\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(to bottom, #1a1a2e, #16213e);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+#gameContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 95vw;
+    height: 90vh;
+    max-width: 1400px;
+    max-height: 800px;
+}
+
+#gameCanvas {
+    border: 3px solid #0f3460;
+    border-radius: 8px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+    background: #87CEEB;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+}
+
+/* Optional: Loading screen */
+.loading {
+    color: white;
+    font-size: 24px;
+    text-align: center;
+}
