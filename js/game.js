@@ -122,8 +122,11 @@ class Game {
     }
 
     startTurn() {
+        console.log('startTurn called. Turn index:', this.currentTurnIndex, 'isLocalPlayerTurn:', this.isLocalPlayerTurn());
+
         // Don't start turns until all tanks have settled
         if (!this.allTanksSettled) {
+            console.log('startTurn: Tanks not settled yet');
             return;
         }
 
@@ -325,6 +328,8 @@ class Game {
     }
 
     nextTurn() {
+        console.log('nextTurn called. Current index:', this.currentTurnIndex);
+
         // Check if game is over before finding next tank
         if (this.checkWinCondition()) {
             this.state = GAME_STATES.GAME_OVER;
@@ -342,6 +347,9 @@ class Game {
                 return;
             }
         } while (!this.getCurrentTank().isAlive);
+
+        console.log('nextTurn: New turn index:', this.currentTurnIndex);
+        console.log('nextTurn: Is local player turn:', this.isLocalPlayerTurn());
 
         this.state = GAME_STATES.PLAYING;
         this.startTurn();
@@ -627,11 +635,29 @@ class Game {
 
     // Handle turn data received from network
     handleNetworkTurn(data) {
-        // Only process if it's not our own turn
-        if (this.isLocalPlayerTurn()) return;
+        console.log('handleNetworkTurn called with data:', data);
+        console.log('Current turn index:', this.currentTurnIndex);
+        console.log('Data tank index:', data.tankIndex);
+
+        // Ignore if this is data for a different turn than we're on
+        if (data.tankIndex !== this.currentTurnIndex) {
+            console.log('Ignoring - tank index mismatch');
+            return;
+        }
+
+        // Ignore if it's our own turn (we already fired locally)
+        if (this.isLocalPlayerTurn()) {
+            console.log('Ignoring - this is our turn, already fired locally');
+            return;
+        }
 
         const tank = this.tanks[data.tankIndex];
-        if (!tank) return;
+        if (!tank) {
+            console.log('Ignoring - tank not found');
+            return;
+        }
+
+        console.log('Processing remote turn data');
 
         // Apply the turn data
         tank.angle = data.angle;
