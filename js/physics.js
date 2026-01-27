@@ -25,9 +25,13 @@ class Projectile {
         // For cluster bombs - track if split has occurred
         this.hasSplit = false;
         this.isSubProjectile = false;
+
+        // For rolling bombs - track rolling state
+        this.isRolling = false;
+        this.rollDirection = 0; // 1 for right, -1 for left
     }
 
-    update() {
+    update(terrain) {
         // Update lifetime
         this.lifetime += FIXED_TIME_STEP;
 
@@ -35,6 +39,11 @@ class Projectile {
         if (this.lifetime >= PROJECTILE_MAX_LIFETIME) {
             this.isActive = false;
             return null;
+        }
+
+        // Rolling bomb special behavior
+        if (this.weaponType === WEAPON_TYPES.ROLLING && this.isRolling) {
+            return this.updateRolling(terrain);
         }
 
         // Apply gravity
@@ -69,6 +78,78 @@ class Projectile {
         }
 
         return { x: this.x, y: this.y };
+    }
+
+    // Update rolling bomb movement along terrain
+    updateRolling(terrain) {
+        if (!terrain) return { x: this.x, y: this.y };
+
+        const rollSpeed = 3; // pixels per frame
+        const newX = this.x + (this.rollDirection * rollSpeed);
+
+        // Check boundaries
+        if (newX < 0 || newX >= GAME_WIDTH) {
+            this.isActive = false;
+            return null;
+        }
+
+        // Get terrain heights
+        const currentHeight = terrain.getHeightAt(Math.floor(this.x));
+        const nextHeight = terrain.getHeightAt(Math.floor(newX));
+
+        // Calculate slope angle
+        const heightDiff = nextHeight - currentHeight;
+        const slopeAngle = Math.atan2(heightDiff, rollSpeed * this.rollDirection) * (180 / Math.PI);
+
+        // Check for steep cliff (90 degree or steeper = wall)
+        // A steep upward slope stops the bomb
+        if (heightDiff < -15) {
+            // Hit a wall/steep cliff going up - explode
+            return null; // Signal to explode
+        }
+
+        // Update position - follow terrain
+        this.x = newX;
+        this.y = nextHeight - PROJECTILE_RADIUS;
+
+        return { x: this.x, y: this.y };
+    }
+
+    // Start rolling when hitting terrain
+    startRolling(terrain) {
+        if (this.weaponType !== WEAPON_TYPES.ROLLING) return false;
+
+        this.isRolling = true;
+        // Roll in the direction of horizontal velocity
+        this.rollDirection = this.vx >= 0 ? 1 : -1;
+
+        // Snap to terrain surface
+        if (terrain) {
+            const terrainHeight = terrain.getHeightAt(Math.floor(this.x));
+            this.y = terrainHeight - PROJECTILE_RADIUS;
+        }
+
+        return true;
+    }
+
+    // Check if rolling bomb should stop (hit steep angle)
+    checkRollStop(terrain) {
+        if (!this.isRolling || !terrain) return false;
+
+        const lookAhead = this.rollDirection * 5;
+        const currentHeight = terrain.getHeightAt(Math.floor(this.x));
+        const aheadHeight = terrain.getHeightAt(Math.floor(this.x + lookAhead));
+
+        // Height difference that constitutes a "wall" (steep angle)
+        const heightDiff = aheadHeight - currentHeight;
+
+        // If terrain rises sharply (negative because Y increases downward)
+        // or drops sharply, consider it a stopping point
+        if (heightDiff < -10) {
+            return true; // Hit a wall
+        }
+
+        return false;
     }
 
     // Handle bounce for bouncing rounds
@@ -164,6 +245,12 @@ class Projectile {
                     damage: WEAPONS[WEAPON_TYPES.BOUNCING].damage,
                     splashRadius: WEAPONS[WEAPON_TYPES.BOUNCING].splashRadius,
                     splashDamage: WEAPONS[WEAPON_TYPES.BOUNCING].splashDamage
+                };
+            case WEAPON_TYPES.ROLLING:
+                return {
+                    damage: WEAPONS[WEAPON_TYPES.ROLLING].damage,
+                    splashRadius: WEAPONS[WEAPON_TYPES.ROLLING].splashRadius,
+                    splashDamage: WEAPONS[WEAPON_TYPES.ROLLING].splashDamage
                 };
             default:
                 return { damage: 0, splashRadius: 0, splashDamage: 0 };

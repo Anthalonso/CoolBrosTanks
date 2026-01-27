@@ -84,6 +84,10 @@ class InputHandler {
             currentTank.setWeapon(WEAPON_TYPES.BOUNCING);
             this.keys['3'] = false;
         }
+        if (this.keys['4']) {
+            currentTank.setWeapon(WEAPON_TYPES.ROLLING);
+            this.keys['4'] = false;
+        }
 
         // Fire weapon
         if (this.keys[' ']) {

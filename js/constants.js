@@ -25,7 +25,8 @@ const TANK_SPAWN_ATTEMPTS = 10; // max attempts to find valid spawn positions
 const WEAPON_TYPES = {
     SIMPLE: 0,
     CLUSTER: 1,
-    BOUNCING: 2
+    BOUNCING: 2,
+    ROLLING: 3
 };
 
 // Weapon properties
@@ -54,6 +55,13 @@ const WEAPONS = {
         splashDamage: 40,
         bounces: 3,
         maxDamage: 180
+    },
+    [WEAPON_TYPES.ROLLING]: {
+        name: 'Rolling Bomb',
+        damage: 20,
+        splashRadius: 25,
+        splashDamage: 15,
+        maxDamage: 35
     }
 };
 

@@ -183,7 +183,14 @@ class Game {
                 continue;
             }
 
-            proj.update();
+            const updateResult = proj.update(this.terrain);
+
+            // Rolling bomb hit a wall during update
+            if (proj.isRolling && updateResult === null) {
+                this.handleProjectileImpact(proj);
+                this.projectiles.splice(i, 1);
+                continue;
+            }
 
             // Check for cluster bomb split
             if (proj.shouldSplit()) {
@@ -193,24 +200,42 @@ class Game {
                 continue;
             }
 
-            // Check terrain collision
-            if (this.terrain.checkCollision(proj.x, proj.y)) {
-                // Try to bounce
-                if (proj.bounce()) {
-                    continue;
-                }
-
-                // Impact
-                this.handleProjectileImpact(proj);
-                this.projectiles.splice(i, 1);
-            }
-
-            // Check tank collision
+            // Check tank collision first (for rolling bombs this is important)
+            let hitTank = false;
             for (const tank of this.tanks) {
                 if (tank.isAlive && tank.checkHit(proj.x, proj.y)) {
                     this.handleProjectileImpact(proj);
                     this.projectiles.splice(i, 1);
+                    hitTank = true;
                     break;
+                }
+            }
+            if (hitTank) continue;
+
+            // Check terrain collision
+            if (this.terrain.checkCollision(proj.x, proj.y)) {
+                // Rolling bomb starts rolling on terrain contact
+                if (proj.weaponType === WEAPON_TYPES.ROLLING && !proj.isRolling) {
+                    proj.startRolling(this.terrain);
+                    continue;
+                }
+
+                // Rolling bomb check for wall/steep angle
+                if (proj.isRolling && proj.checkRollStop(this.terrain)) {
+                    this.handleProjectileImpact(proj);
+                    this.projectiles.splice(i, 1);
+                    continue;
+                }
+
+                // Try to bounce (for bouncing rounds)
+                if (proj.bounce()) {
+                    continue;
+                }
+
+                // Impact for non-rolling projectiles
+                if (!proj.isRolling) {
+                    this.handleProjectileImpact(proj);
+                    this.projectiles.splice(i, 1);
                 }
             }
         }

@@ -12,9 +12,12 @@ function init() {
 
     // Initialize systems
     renderer = new Renderer(canvas);
-    ui = new UI(ctx);
+    ui = new UI(ctx, canvas);
     inputHandler = new InputHandler();
     game = new Game();
+
+    // Make game globally accessible for UI click handlers
+    window.game = game;
 
     // Setup menu controls
     setupMenuControls();
