@@ -431,6 +431,10 @@ class Game {
 
     // Join an existing multiplayer game
     async joinMultiplayerGame() {
+        console.log('joinMultiplayerGame called');
+        console.log('playerName:', this.playerName);
+        console.log('roomCodeInput:', this.roomCodeInput);
+
         if (!this.playerName) {
             this.playerName = 'Player';
         }
@@ -442,19 +446,27 @@ class Game {
         }
 
         this.menuState = 'connecting';
+        console.log('Menu state set to connecting');
 
         try {
             // Initialize network if not exists
             if (!network) {
+                console.log('Creating new Network instance');
+                network = new Network();
+            } else {
+                console.log('Network already exists, disconnecting first');
+                network.disconnect();
                 network = new Network();
             }
 
             // Setup network callbacks
             this.setupNetworkCallbacks();
+            console.log('Network callbacks set up');
 
             // Join the game
+            console.log('Calling network.joinGame with code:', this.roomCodeInput);
             await network.joinGame(this.roomCodeInput, this.playerName);
-            console.log('Joined game');
+            console.log('Joined game successfully');
 
             this.isMultiplayer = true;
             this.menuState = 'lobby';

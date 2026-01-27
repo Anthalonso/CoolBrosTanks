@@ -415,6 +415,12 @@ class UI {
         // Host button
         const hostBtnY = y + 160;
         this.drawConfirmButton(GAME_WIDTH / 2 - 100, hostBtnY, 200, 50, 'CREATE ROOM', () => {
+            // If text input is active, save current value before hosting
+            if (this.textInputActive) {
+                game.playerName = this.textInputValue || 'Player';
+                this.textInputActive = false;
+                this.textInputValue = '';
+            }
             game.hostMultiplayerGame();
         });
 
@@ -482,6 +488,16 @@ class UI {
         // Join button
         const joinBtnY = y + 210;
         this.drawConfirmButton(GAME_WIDTH / 2 - 100, joinBtnY, 200, 50, 'JOIN ROOM', () => {
+            // If text input is active, save current value before joining
+            if (this.textInputActive) {
+                if (this.textInputLabel === 'code') {
+                    game.roomCodeInput = this.textInputValue.toUpperCase();
+                } else if (this.textInputLabel === 'name') {
+                    game.playerName = this.textInputValue || 'Player';
+                }
+                this.textInputActive = false;
+                this.textInputValue = '';
+            }
             game.joinMultiplayerGame();
         });
 

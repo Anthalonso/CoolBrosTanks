@@ -33,13 +33,20 @@ class Network {
         return new Promise((resolve, reject) => {
             this.roomCode = this.generateRoomCode();
             this.isHost = true;
+            let hasResolved = false;
 
             // Create peer with room code as ID
-            this.peer = new Peer('coolbrostanks-' + this.roomCode, {
-                debug: 1
+            const peerId = 'coolbrostanks-' + this.roomCode;
+            console.log('Creating host peer with ID:', peerId);
+
+            this.peer = new Peer(peerId, {
+                debug: 2
             });
 
             this.peer.on('open', (id) => {
+                if (hasResolved) return;
+                hasResolved = true;
+
                 console.log('Host peer opened with ID:', id);
                 this.localPlayerId = id;
                 this.connected = true;
@@ -59,17 +66,36 @@ class Network {
             });
 
             this.peer.on('connection', (conn) => {
+                console.log('Incoming connection from:', conn.peer);
                 this.handleNewConnection(conn);
             });
 
             this.peer.on('error', (err) => {
-                console.error('Peer error:', err);
+                if (hasResolved) return;
+                hasResolved = true;
+
+                console.error('Host peer error:', err);
+                this.disconnect();
+
                 if (err.type === 'unavailable-id') {
                     reject(new Error('Room code already in use. Try again.'));
+                } else if (err.type === 'network') {
+                    reject(new Error('Network error. Check your internet connection.'));
+                } else if (err.type === 'server-error') {
+                    reject(new Error('PeerJS server error. Please try again.'));
                 } else {
-                    reject(err);
+                    reject(new Error('Failed to create room: ' + (err.message || err.type || 'Unknown error')));
                 }
             });
+
+            // Timeout for host peer creation
+            setTimeout(() => {
+                if (!hasResolved) {
+                    hasResolved = true;
+                    this.disconnect();
+                    reject(new Error('Failed to create room. Please try again.'));
+                }
+            }, 10000);
         });
     }
 
@@ -78,9 +104,11 @@ class Network {
         return new Promise((resolve, reject) => {
             this.roomCode = roomCode.toUpperCase();
             this.isHost = false;
+            let hasResolved = false;
+            let connectionTimeout = null;
 
             this.peer = new Peer(null, {
-                debug: 1
+                debug: 2
             });
 
             this.peer.on('open', (id) => {
@@ -88,11 +116,28 @@ class Network {
                 this.localPlayerId = id;
 
                 // Connect to host
-                const conn = this.peer.connect('coolbrostanks-' + this.roomCode, {
+                const hostPeerId = 'coolbrostanks-' + this.roomCode;
+                console.log('Attempting to connect to:', hostPeerId);
+
+                const conn = this.peer.connect(hostPeerId, {
                     reliable: true
                 });
 
+                // Set a timeout for the connection to open
+                connectionTimeout = setTimeout(() => {
+                    if (!hasResolved) {
+                        hasResolved = true;
+                        console.error('Connection open timeout');
+                        this.disconnect();
+                        reject(new Error('Connection timed out. Room may not exist.'));
+                    }
+                }, 10000);
+
                 conn.on('open', () => {
+                    if (hasResolved) return;
+                    hasResolved = true;
+                    clearTimeout(connectionTimeout);
+
                     console.log('Connected to host');
                     this.connections.push(conn);
                     this.connected = true;
@@ -112,34 +157,69 @@ class Network {
                 });
 
                 conn.on('error', (err) => {
+                    if (hasResolved) return;
+                    hasResolved = true;
+                    clearTimeout(connectionTimeout);
+
                     console.error('Connection error:', err);
-                    reject(new Error('Failed to connect to room'));
+                    this.disconnect();
+                    reject(new Error('Failed to connect to room: ' + (err.message || err.type || 'Unknown error')));
                 });
             });
 
             this.peer.on('error', (err) => {
+                if (hasResolved) return;
+                hasResolved = true;
+                clearTimeout(connectionTimeout);
+
                 console.error('Peer error:', err);
+                this.disconnect();
+
                 if (err.type === 'peer-unavailable') {
                     reject(new Error('Room not found. Check the code and try again.'));
+                } else if (err.type === 'network') {
+                    reject(new Error('Network error. Check your internet connection.'));
+                } else if (err.type === 'server-error') {
+                    reject(new Error('PeerJS server error. Please try again.'));
                 } else {
-                    reject(err);
+                    reject(new Error('Connection failed: ' + (err.message || err.type || 'Unknown error')));
                 }
             });
 
-            // Timeout for connection
+            // Overall timeout for peer creation
             setTimeout(() => {
-                if (!this.connected) {
-                    reject(new Error('Connection timed out'));
+                if (!hasResolved) {
+                    hasResolved = true;
+                    clearTimeout(connectionTimeout);
+                    this.disconnect();
+                    reject(new Error('Connection timed out. Please try again.'));
                 }
-            }, 10000);
+            }, 15000);
         });
     }
 
     // Handle new connection (host only)
     handleNewConnection(conn) {
         console.log('New connection from:', conn.peer);
-        this.connections.push(conn);
-        this.setupConnectionHandlers(conn);
+
+        conn.on('open', () => {
+            console.log('Connection opened with:', conn.peer);
+            this.connections.push(conn);
+            this.setupConnectionHandlers(conn);
+        });
+
+        conn.on('error', (err) => {
+            console.error('Connection error from:', conn.peer, err);
+        });
+
+        // If already open (can happen), set up immediately
+        if (conn.open) {
+            console.log('Connection already open with:', conn.peer);
+            if (!this.connections.includes(conn)) {
+                this.connections.push(conn);
+                this.setupConnectionHandlers(conn);
+            }
+        }
     }
 
     // Setup handlers for a connection
