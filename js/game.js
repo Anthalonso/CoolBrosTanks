@@ -162,14 +162,25 @@ class Game {
     }
 
     fireWeapon() {
+        console.log('fireWeapon called. allTanksSettled:', this.allTanksSettled, 'hasFiredThisTurn:', this.hasFiredThisTurn);
+
         // Don't allow firing until all tanks have settled
-        if (!this.allTanksSettled) return;
+        if (!this.allTanksSettled) {
+            console.log('fireWeapon: Tanks not settled, skipping');
+            return;
+        }
 
         // Prevent firing more than once per turn
-        if (this.hasFiredThisTurn) return;
+        if (this.hasFiredThisTurn) {
+            console.log('fireWeapon: Already fired this turn, skipping');
+            return;
+        }
 
         const tank = this.getCurrentTank();
-        if (!tank || this.projectiles.length > 0) return;
+        if (!tank || this.projectiles.length > 0) {
+            console.log('fireWeapon: No tank or projectiles in flight, skipping');
+            return;
+        }
 
         const barrelEnd = tank.getBarrelEnd();
         const projectile = new Projectile(
@@ -658,6 +669,13 @@ class Game {
         }
 
         console.log('Processing remote turn data');
+
+        // If we receive turn data, the other player's tanks are settled
+        // Force our tanks to be settled too to stay in sync
+        if (!this.allTanksSettled) {
+            console.log('Forcing allTanksSettled = true due to received turn data');
+            this.allTanksSettled = true;
+        }
 
         // Apply the turn data
         tank.angle = data.angle;
