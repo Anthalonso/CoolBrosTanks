@@ -28,9 +28,17 @@ function init() {
 
 function setupMenuControls() {
     document.addEventListener('keydown', (e) => {
+        // Don't process menu keys if text input is active
+        if (ui && (ui.textInputActive || ui.chatInputActive)) {
+            return;
+        }
+
         if (game.state === GAME_STATES.MENU) {
-            e.preventDefault();
-            game.handleMenuInput(e.key);
+            // Only handle menu input for local play menus (players, ai, map, confirm)
+            if (['players', 'ai', 'map', 'confirm'].includes(game.menuState)) {
+                e.preventDefault();
+                game.handleMenuInput(e.key);
+            }
         }
 
         if (game.state === GAME_STATES.GAME_OVER && (e.key === 'r' || e.key === 'R')) {
@@ -101,6 +109,18 @@ function render() {
     // Draw HUD
     if (game.state === GAME_STATES.PLAYING) {
         ui.drawHUD(game);
+
+        // Draw multiplayer turn indicator
+        if (game.isMultiplayer) {
+            const isYourTurn = game.isLocalPlayerTurn();
+            const currentPlayerName = game.getCurrentPlayerName();
+            ui.drawMultiplayerTurnIndicator(isYourTurn, currentPlayerName);
+        }
+    }
+
+    // Draw chat for multiplayer
+    if (game.isMultiplayer && (game.state === GAME_STATES.PLAYING || game.state === GAME_STATES.PROJECTILE_FLYING)) {
+        ui.drawChat();
     }
 
     // Draw pause screen

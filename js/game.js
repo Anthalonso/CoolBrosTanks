@@ -3,7 +3,7 @@
 class Game {
     constructor() {
         this.state = GAME_STATES.MENU;
-        this.menuState = 'main'; // main, players, ai, map, confirm
+        this.menuState = 'main'; // main, modeSelect, hostGame, joinGame, lobby, players, ai, map, confirm
         this.terrain = null;
         this.tanks = [];
         this.projectiles = [];
@@ -18,6 +18,18 @@ class Game {
         this.selectedMap = MAP_TYPES.ROLLING_HILLS;
         this.selectedPlayers = 2;
         this.aiSettings = [AI_DIFFICULTY.NONE, AI_DIFFICULTY.EASY]; // Default: P1 human, P2 easy AI
+
+        // Multiplayer settings
+        this.isMultiplayer = false;
+        this.playerName = '';
+        this.roomCodeInput = '';
+        this.connectionError = '';
+        this.terrainSeed = null;
+    }
+
+    // Set menu state
+    setMenuState(state) {
+        this.menuState = state;
     }
 
     // Menu navigation methods
@@ -377,5 +389,261 @@ class Game {
         this.damageNumbers = [];
         this.terrain = null;
         this.tanks = [];
+        this.isMultiplayer = false;
+
+        // Disconnect from network if connected
+        if (network) {
+            network.disconnect();
+        }
+    }
+
+    // === MULTIPLAYER METHODS ===
+
+    // Host a new multiplayer game
+    async hostMultiplayerGame() {
+        if (!this.playerName) {
+            this.playerName = 'Host';
+        }
+
+        this.menuState = 'connecting';
+
+        try {
+            // Initialize network if not exists
+            if (!network) {
+                network = new Network();
+            }
+
+            // Setup network callbacks
+            this.setupNetworkCallbacks();
+
+            // Host the game
+            const roomCode = await network.hostGame(this.playerName);
+            console.log('Hosted game with room code:', roomCode);
+
+            this.isMultiplayer = true;
+            this.menuState = 'lobby';
+        } catch (err) {
+            console.error('Failed to host game:', err);
+            this.connectionError = err.message;
+            this.menuState = 'error';
+        }
+    }
+
+    // Join an existing multiplayer game
+    async joinMultiplayerGame() {
+        if (!this.playerName) {
+            this.playerName = 'Player';
+        }
+
+        if (!this.roomCodeInput) {
+            this.connectionError = 'Please enter a room code';
+            this.menuState = 'error';
+            return;
+        }
+
+        this.menuState = 'connecting';
+
+        try {
+            // Initialize network if not exists
+            if (!network) {
+                network = new Network();
+            }
+
+            // Setup network callbacks
+            this.setupNetworkCallbacks();
+
+            // Join the game
+            await network.joinGame(this.roomCodeInput, this.playerName);
+            console.log('Joined game');
+
+            this.isMultiplayer = true;
+            this.menuState = 'lobby';
+        } catch (err) {
+            console.error('Failed to join game:', err);
+            this.connectionError = err.message;
+            this.menuState = 'error';
+        }
+    }
+
+    // Leave multiplayer game
+    leaveMultiplayerGame() {
+        if (network) {
+            network.disconnect();
+        }
+        this.isMultiplayer = false;
+        this.menuState = 'main';
+    }
+
+    // Setup network event callbacks
+    setupNetworkCallbacks() {
+        network.onPlayerJoined = (player) => {
+            console.log('Player joined:', player.name);
+            if (ui) {
+                ui.addChatMessage(null, `${player.name} joined the game`, true);
+            }
+        };
+
+        network.onPlayerLeft = (peerId) => {
+            console.log('Player left:', peerId);
+            if (ui) {
+                ui.addChatMessage(null, 'A player left the game', true);
+            }
+        };
+
+        network.onGameStart = (data) => {
+            console.log('Game starting with data:', data);
+            this.handleMultiplayerGameStart(data);
+        };
+
+        network.onTurnData = (data) => {
+            console.log('Received turn data:', data);
+            this.handleNetworkTurn(data);
+        };
+
+        network.onChatMessage = (data) => {
+            if (ui && data.peerId !== network.localPlayerId) {
+                ui.addChatMessage(data.playerName, data.message);
+            } else if (ui) {
+                // Show own messages too
+                ui.addChatMessage(data.playerName, data.message);
+            }
+        };
+    }
+
+    // Host: start the multiplayer game
+    startMultiplayerGame() {
+        if (!network || !network.isHost) return;
+
+        // Generate terrain seed for synchronized terrain
+        this.terrainSeed = Math.floor(Math.random() * 1000000);
+
+        const settings = {
+            map: this.selectedMap,
+            playerCount: network.players.length,
+            terrainSeed: this.terrainSeed
+        };
+
+        network.startGame(settings);
+    }
+
+    // Handle game start from network
+    handleMultiplayerGameStart(data) {
+        this.selectedMap = data.settings.map;
+        this.selectedPlayers = data.settings.playerCount;
+        this.terrainSeed = data.settings.terrainSeed;
+
+        // All players are human in multiplayer
+        this.aiSettings = new Array(this.selectedPlayers).fill(AI_DIFFICULTY.NONE);
+
+        this.isMultiplayer = true;
+        this.state = GAME_STATES.SETUP;
+        this.setupMultiplayerGame(data.players);
+        this.state = GAME_STATES.PLAYING;
+        this.startTurn();
+    }
+
+    // Setup game for multiplayer
+    setupMultiplayerGame(players) {
+        // Generate terrain (use seed for consistency)
+        this.terrain = new Terrain(this.selectedMap);
+
+        // Create tanks for each player
+        this.tanks = [];
+        const positions = this.generateTankPositions(players.length);
+
+        for (let i = 0; i < players.length; i++) {
+            const tank = new Tank(
+                i,
+                positions[i],
+                TANK_COLORS[i],
+                AI_DIFFICULTY.NONE // All human in multiplayer
+            );
+            tank.playerName = players[i].name;
+            tank.peerId = players[i].peerId;
+            tank.updatePosition(this.terrain);
+            this.tanks.push(tank);
+        }
+
+        this.currentTurnIndex = 0;
+        this.projectiles = [];
+        this.explosions = [];
+        this.damageNumbers = [];
+        this.allTanksSettled = false;
+    }
+
+    // Check if it's the local player's turn
+    isLocalPlayerTurn() {
+        if (!this.isMultiplayer || !network) return true;
+
+        const currentTank = this.getCurrentTank();
+        if (!currentTank) return false;
+
+        return currentTank.peerId === network.localPlayerId;
+    }
+
+    // Get current player name for display
+    getCurrentPlayerName() {
+        const currentTank = this.getCurrentTank();
+        if (currentTank && currentTank.playerName) {
+            return currentTank.playerName;
+        }
+        return `Player ${this.currentTurnIndex + 1}`;
+    }
+
+    // Fire weapon with network sync
+    fireWeaponMultiplayer() {
+        if (!this.allTanksSettled) return;
+        if (this.hasFiredThisTurn) return;
+        if (!this.isLocalPlayerTurn()) return;
+
+        const tank = this.getCurrentTank();
+        if (!tank || this.projectiles.length > 0) return;
+
+        // Send turn data to network
+        if (network && network.connected) {
+            network.sendTurn({
+                tankIndex: this.currentTurnIndex,
+                angle: tank.angle,
+                power: tank.power,
+                weapon: tank.selectedWeapon
+            });
+        }
+
+        // Fire locally
+        this.fireWeapon();
+    }
+
+    // Handle turn data received from network
+    handleNetworkTurn(data) {
+        // Only process if it's not our own turn
+        if (this.isLocalPlayerTurn()) return;
+
+        const tank = this.tanks[data.tankIndex];
+        if (!tank) return;
+
+        // Apply the turn data
+        tank.angle = data.angle;
+        tank.power = data.power;
+        tank.selectedWeapon = data.weapon;
+
+        // Fire the weapon
+        this.fireWeapon();
+    }
+
+    // Override checkWinCondition for multiplayer
+    checkWinCondition() {
+        const aliveTanks = this.tanks.filter(t => t.isAlive);
+
+        // Game over if only one tank left
+        if (aliveTanks.length <= 1) return true;
+
+        // In multiplayer, don't check for human players
+        if (this.isMultiplayer) return false;
+
+        // In local play, game over if all human players are dead
+        const aliveHumans = aliveTanks.filter(t => t.isHuman());
+        if (aliveHumans.length === 0) return true;
+
+        return false;
     }
 }

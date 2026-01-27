@@ -52,8 +52,17 @@ class InputHandler {
         // Don't process other inputs if not in PLAYING state
         if (game.state !== GAME_STATES.PLAYING) return;
 
+        // Don't process inputs if chat is active
+        if (ui && ui.chatInputActive) return;
+
         const currentTank = game.getCurrentTank();
-        if (!currentTank || !currentTank.isHuman() || game.projectiles.length > 0) return;
+        if (!currentTank || game.projectiles.length > 0) return;
+
+        // In multiplayer, only allow input if it's our turn
+        if (game.isMultiplayer && !game.isLocalPlayerTurn()) return;
+
+        // In local play, only allow input for human players
+        if (!game.isMultiplayer && !currentTank.isHuman()) return;
 
         // Angle controls
         if (this.isKeyPressed('ArrowLeft')) {
@@ -93,7 +102,11 @@ class InputHandler {
         if (this.keys[' ']) {
             this.keys[' '] = false;
             if (currentTank.power >= MIN_POWER_THRESHOLD) {
-                game.fireWeapon();
+                if (game.isMultiplayer) {
+                    game.fireWeaponMultiplayer();
+                } else {
+                    game.fireWeapon();
+                }
             }
         }
 
