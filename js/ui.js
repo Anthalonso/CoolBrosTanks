@@ -301,8 +301,8 @@ class UI {
         ctx.font = '28px Arial';
 
         const options = [
-            { text: 'Online Multiplayer', action: () => game.setMenuState('modeSelect') },
-            { text: 'Local Play', action: () => game.setMenuState('players') }
+            { text: '1. Online Multiplayer', action: () => game.setMenuState('modeSelect') },
+            { text: '2. Local Play', action: () => game.setMenuState('players') }
         ];
 
         const buttonWidth = 280;
@@ -331,7 +331,7 @@ class UI {
 
         ctx.font = UI_FONT;
         ctx.fillStyle = COLORS.TEXT;
-        ctx.fillText('Select game mode', GAME_WIDTH / 2, GAME_HEIGHT - 50);
+        ctx.fillText('Press 1 or 2  |  Click to select', GAME_WIDTH / 2, GAME_HEIGHT - 50);
     }
 
     drawModeSelect(y, lineHeight) {
@@ -343,8 +343,8 @@ class UI {
         ctx.fillText('Online Multiplayer', GAME_WIDTH / 2, y);
 
         const options = [
-            { text: 'Host Game', action: () => game.setMenuState('hostGame') },
-            { text: 'Join Game', action: () => game.setMenuState('joinGame') }
+            { text: '1. Host Game', action: () => game.setMenuState('hostGame') },
+            { text: '2. Join Game', action: () => game.setMenuState('joinGame') }
         ];
 
         const buttonWidth = 220;
@@ -373,7 +373,7 @@ class UI {
 
         ctx.font = UI_FONT;
         ctx.fillStyle = COLORS.TEXT;
-        ctx.fillText('Host a new game or join an existing one', GAME_WIDTH / 2, GAME_HEIGHT - 50);
+        ctx.fillText('Press 1 or 2  |  ESC to go back', GAME_WIDTH / 2, GAME_HEIGHT - 50);
     }
 
     drawHostGame(y, lineHeight) {

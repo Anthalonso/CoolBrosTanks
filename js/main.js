@@ -34,8 +34,8 @@ function setupMenuControls() {
         }
 
         if (game.state === GAME_STATES.MENU) {
-            // Only handle menu input for local play menus (players, ai, map, confirm)
-            if (['players', 'ai', 'map', 'confirm'].includes(game.menuState)) {
+            // Handle menu input for all menu states
+            if (['main', 'modeSelect', 'players', 'ai', 'map', 'confirm'].includes(game.menuState)) {
                 e.preventDefault();
                 game.handleMenuInput(e.key);
             }

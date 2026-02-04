@@ -35,10 +35,12 @@ class Game {
     // Menu navigation methods
     handleMenuInput(key) {
         if (this.menuState === 'main') {
-            if (key === '1') this.menuState = 'players';
-            else if (key === '2') this.menuState = 'ai';
-            else if (key === '3') this.menuState = 'map';
-            else if (key === '4') this.menuState = 'confirm';
+            if (key === '1') this.menuState = 'modeSelect'; // Online Multiplayer
+            else if (key === '2') this.menuState = 'players'; // Local Play
+        } else if (this.menuState === 'modeSelect') {
+            if (key === '1') this.menuState = 'hostGame';
+            else if (key === '2') this.menuState = 'joinGame';
+            else if (key === 'Escape') this.menuState = 'main';
         } else if (this.menuState === 'players') {
             if (key >= '2' && key <= '8') {
                 this.selectedPlayers = parseInt(key);
@@ -48,6 +50,8 @@ class Game {
                 for (let i = 1; i < this.selectedPlayers; i++) {
                     this.aiSettings[i] = AI_DIFFICULTY.EASY; // Others default to Easy AI
                 }
+                // Advance to AI configuration
+                this.menuState = 'ai';
             } else if (key === 'Escape') {
                 this.menuState = 'main';
             }
@@ -57,21 +61,23 @@ class Game {
                 // Cycle through AI difficulties: Human -> Easy -> Normal -> Hard -> Human
                 this.aiSettings[playerIndex] = (this.aiSettings[playerIndex] + 1) % 4;
             } else if (key === ' ') {
-                this.menuState = 'confirm';
+                this.menuState = 'map';
             } else if (key === 'Escape') {
-                this.menuState = 'main';
+                this.menuState = 'players';
             }
         } else if (this.menuState === 'map') {
             if (key >= '1' && key <= '5') {
                 this.selectedMap = parseInt(key) - 1;
+                // Advance to confirmation
+                this.menuState = 'confirm';
             } else if (key === 'Escape') {
-                this.menuState = 'main';
+                this.menuState = 'ai';
             }
         } else if (this.menuState === 'confirm') {
             if (key === ' ') {
                 this.startGame();
             } else if (key === 'Escape') {
-                this.menuState = 'main';
+                this.menuState = 'map';
             }
         }
     }
