@@ -64,7 +64,8 @@ class WeaponSystem {
             damageReport,
             impactX,
             impactY,
-            radius: impactData.splashRadius
+            radius: impactData.splashRadius,
+            isNapalm: impactData.isNapalm || false
         };
     }
 }
