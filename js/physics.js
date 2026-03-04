@@ -252,6 +252,13 @@ class Projectile {
                     splashRadius: WEAPONS[WEAPON_TYPES.ROLLING].splashRadius,
                     splashDamage: WEAPONS[WEAPON_TYPES.ROLLING].splashDamage
                 };
+            case WEAPON_TYPES.NAPALM:
+                return {
+                    damage: 0,
+                    splashRadius: 0,
+                    splashDamage: 0,
+                    isNapalm: true
+                };
             default:
                 return { damage: 0, splashRadius: 0, splashDamage: 0 };
         }
@@ -289,5 +296,92 @@ class Explosion {
     getAlpha() {
         const progress = this.frame / this.duration;
         return 1 - progress;
+    }
+}
+
+// Lava pool created by Napalm weapon
+class LavaPool {
+    constructor(impactX, terrain) {
+        this.impactX = Math.floor(impactX);
+        this.terrain = terrain;
+        this.isActive = true;
+
+        // Spread edges (start at impact point)
+        this.leftEdge = this.impactX;
+        this.rightEdge = this.impactX;
+
+        // Per-tank contact state: tankId -> { inContact: bool, damageDealt: number }
+        this.tankStates = {};
+    }
+
+    update() {
+        // Spread left
+        const newLeft = this.leftEdge - LAVA_SPREAD_RATE;
+        if (this.impactX - newLeft <= LAVA_MAX_SPREAD && newLeft >= 0) {
+            const currentH = this.terrain.getHeightAt(this.leftEdge);
+            const nextH = this.terrain.getHeightAt(newLeft);
+            // Only spread if terrain is level or lower (higher Y = lower on screen)
+            if (nextH >= currentH) {
+                this.leftEdge = newLeft;
+            }
+        }
+
+        // Spread right
+        const newRight = this.rightEdge + LAVA_SPREAD_RATE;
+        if (newRight - this.impactX <= LAVA_MAX_SPREAD && newRight < GAME_WIDTH) {
+            const currentH = this.terrain.getHeightAt(this.rightEdge);
+            const nextH = this.terrain.getHeightAt(newRight);
+            if (nextH >= currentH) {
+                this.rightEdge = newRight;
+            }
+        }
+    }
+
+    isTankInPool(tank) {
+        const tankLeft = Math.floor(tank.x - TANK_WIDTH / 2);
+        const tankRight = Math.floor(tank.x + TANK_WIDTH / 2);
+
+        // Quick bounds check
+        if (tankRight < this.leftEdge || tankLeft > this.rightEdge) return false;
+
+        // Check tank bottom is at terrain level (not hovering above)
+        const terrainY = this.terrain.getHeightAt(Math.floor(tank.x));
+        const tankBottomY = tank.y + TANK_HEIGHT;
+        return tankBottomY >= terrainY - 5; // 5px tolerance
+    }
+
+    applyDamageTo(tank) {
+        if (!tank.isAlive) return 0;
+
+        const id = tank.id;
+        if (!this.tankStates[id]) {
+            this.tankStates[id] = { inContact: false, damageDealt: 0 };
+        }
+
+        const state = this.tankStates[id];
+        const inPool = this.isTankInPool(tank);
+
+        if (!inPool) {
+            // Tank left the pool — reset for next contact
+            if (state.inContact) {
+                state.inContact = false;
+                state.damageDealt = 0;
+            }
+            return 0;
+        }
+
+        // Tank entered pool
+        if (!state.inContact) {
+            state.inContact = true;
+            state.damageDealt = 0;
+        }
+
+        // Cap reached — no more damage this contact
+        if (state.damageDealt >= LAVA_MAX_CONTACT_DAMAGE) return 0;
+
+        const dmg = Math.min(LAVA_DAMAGE_PER_FRAME, LAVA_MAX_CONTACT_DAMAGE - state.damageDealt);
+        const dealt = tank.takeDamage(dmg);
+        state.damageDealt += dealt;
+        return dealt;
     }
 }
