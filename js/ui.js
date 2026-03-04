@@ -218,7 +218,7 @@ class UI {
 
         // Weapon key hint
         ctx.font = UI_FONT;
-        ctx.fillText('[1/2/3/4] to change weapon', GAME_WIDTH / 2, 50);
+        ctx.fillText('[1-5] to change weapon', GAME_WIDTH / 2, 50);
 
         // Angle and Power (right)
         ctx.font = UI_FONT_LARGE;

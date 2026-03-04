@@ -97,6 +97,10 @@ class InputHandler {
             currentTank.setWeapon(WEAPON_TYPES.ROLLING);
             this.keys['4'] = false;
         }
+        if (this.keys['5']) {
+            currentTank.setWeapon(WEAPON_TYPES.NAPALM);
+            this.keys['5'] = false;
+        }
 
         // Fire weapon
         if (this.keys[' ']) {
