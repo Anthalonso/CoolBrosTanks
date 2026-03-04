@@ -26,7 +26,8 @@ const WEAPON_TYPES = {
     SIMPLE: 0,
     CLUSTER: 1,
     BOUNCING: 2,
-    ROLLING: 3
+    ROLLING: 3,
+    NAPALM: 4
 };
 
 // Weapon properties
@@ -62,8 +63,19 @@ const WEAPONS = {
         splashRadius: 25,
         splashDamage: 15,
         maxDamage: 35
+    },
+    [WEAPON_TYPES.NAPALM]: {
+        name: 'Napalm',
+        impactDamage: 0,
+        splashRadius: 0
     }
 };
+
+// Lava pool constants (Napalm weapon)
+const LAVA_MAX_SPREAD = 60;         // max px from impact center in each direction
+const LAVA_SPREAD_RATE = 2;         // px per frame the pool spreads
+const LAVA_DAMAGE_PER_FRAME = 1;    // HP dealt per frame while tank is in contact
+const LAVA_MAX_CONTACT_DAMAGE = 34; // max HP per single contact exposure
 
 // Fall damage
 const FALL_DAMAGE_RATE = 5; // HP per 10 pixels
