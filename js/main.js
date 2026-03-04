@@ -84,6 +84,11 @@ function render() {
         renderer.drawTerrain(game.terrain);
     }
 
+    // Draw lava pools (above terrain, below tanks)
+    for (const pool of game.lavaPools) {
+        renderer.drawLavaPool(pool, game.terrain);
+    }
+
     // Draw tanks
     for (let i = 0; i < game.tanks.length; i++) {
         const tank = game.tanks[i];

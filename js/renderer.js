@@ -156,6 +156,23 @@ class Renderer {
         ctx.fill();
     }
 
+    drawLavaPool(pool, terrain) {
+        const ctx = this.ctx;
+        const pulse = 0.6 + 0.4 * Math.sin(Date.now() / 150);
+
+        for (let x = pool.leftEdge; x <= pool.rightEdge; x++) {
+            const terrainY = terrain.getHeightAt(x);
+
+            // Lava body (4px tall strip on terrain surface)
+            ctx.fillStyle = `rgba(255, 80, 0, ${pulse * 0.85})`;
+            ctx.fillRect(x, terrainY - 4, 1, 4);
+
+            // Bright core highlight (top 1px)
+            ctx.fillStyle = `rgba(255, 200, 50, ${pulse * 0.9})`;
+            ctx.fillRect(x, terrainY - 4, 1, 1);
+        }
+    }
+
     drawDamageNumber(x, y, damage, frame) {
         const alpha = 1 - (frame / 60);
         const offsetY = frame * 0.5;
