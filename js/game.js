@@ -11,6 +11,7 @@ class Game {
         this.currentTurnIndex = 0;
         this.showTrajectoryPreview = false;
         this.damageNumbers = [];
+        this.lavaPools = [];
         this.allTanksSettled = false; // Track if all tanks have landed
         this.hasFiredThisTurn = false; // Prevent fire button spamming
 
@@ -112,6 +113,7 @@ class Game {
         this.projectiles = [];
         this.explosions = [];
         this.damageNumbers = [];
+        this.lavaPools = [];
         this.allTanksSettled = false; // Tanks need to land before play starts
     }
 
@@ -280,6 +282,15 @@ class Game {
             }
         }
 
+        // Update lava pools and apply damage
+        for (const pool of this.lavaPools) {
+            pool.update();
+            for (const tank of this.tanks) {
+                if (!tank.isAlive) continue;
+                pool.applyDamageTo(tank);
+            }
+        }
+
         // Update damage numbers
         for (let i = this.damageNumbers.length - 1; i >= 0; i--) {
             this.damageNumbers[i].frame++;
@@ -326,10 +337,16 @@ class Game {
         // Apply damage
         const result = WeaponSystem.applyDamage(projectile, this.tanks, this.terrain);
 
-        // Create explosion effect
+        // Create explosion effect (not for napalm — no blast)
         if (result.radius > 0) {
             const explosion = new Explosion(result.impactX, result.impactY, result.radius);
             this.explosions.push(explosion);
+        }
+
+        // Create lava pool for napalm
+        if (result.isNapalm) {
+            const pool = new LavaPool(result.impactX, this.terrain);
+            this.lavaPools.push(pool);
         }
 
         // Create damage numbers
@@ -345,6 +362,9 @@ class Game {
     }
 
     nextTurn() {
+        // Clear lava pools at end of turn
+        this.lavaPools = [];
+
         console.log('nextTurn called. Current index:', this.currentTurnIndex);
 
         // Check if game is over before finding next tank
@@ -412,6 +432,7 @@ class Game {
         this.projectiles = [];
         this.explosions = [];
         this.damageNumbers = [];
+        this.lavaPools = [];
         this.terrain = null;
         this.tanks = [];
         this.isMultiplayer = false;
