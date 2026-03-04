@@ -158,18 +158,51 @@ class Renderer {
 
     drawLavaPool(pool, terrain) {
         const ctx = this.ctx;
-        const pulse = 0.6 + 0.4 * Math.sin(Date.now() / 150);
+        const time = Date.now();
+        const pulse = 0.6 + 0.4 * Math.sin(time / 150);
+        const lavaThickness = 8;
 
+        // Draw flame tongues (drawn first so lava body sits on top)
+        const flameSpacing = 6;
+        for (let x = pool.leftEdge; x <= pool.rightEdge; x += flameSpacing) {
+            const terrainY = terrain.getHeightAt(x);
+
+            // Each column gets its own animated phase
+            const wave1 = Math.sin(time / 180 + x * 0.25);
+            const wave2 = Math.sin(time / 110 + x * 0.4 + 2.0);
+            const height = 12 + (wave1 * 0.5 + 0.5) * 20; // 12–32px tall
+            const lean = wave2 * 3;                         // slight horizontal sway
+            const alpha = (0.5 + (wave1 * 0.5 + 0.5) * 0.4) * pulse;
+
+            const baseY = terrainY - lavaThickness;
+            const tipX = x + lean;
+            const tipY = baseY - height;
+
+            const gradient = ctx.createLinearGradient(x, baseY, tipX, tipY);
+            gradient.addColorStop(0, `rgba(255, 140, 0, ${alpha})`);
+            gradient.addColorStop(0.5, `rgba(255, 60, 0, ${alpha * 0.7})`);
+            gradient.addColorStop(1, `rgba(255, 220, 0, 0)`);
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.moveTo(x - 3, baseY);
+            ctx.quadraticCurveTo(tipX + 4, baseY - height * 0.4, tipX, tipY);
+            ctx.quadraticCurveTo(tipX - 4, baseY - height * 0.4, x + 3, baseY);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Draw lava body on top of flames
         for (let x = pool.leftEdge; x <= pool.rightEdge; x++) {
             const terrainY = terrain.getHeightAt(x);
 
-            // Lava body (4px tall strip on terrain surface)
-            ctx.fillStyle = `rgba(255, 80, 0, ${pulse * 0.85})`;
-            ctx.fillRect(x, terrainY - 4, 1, 4);
+            // Lava body (8px thick)
+            ctx.fillStyle = `rgba(255, 80, 0, ${pulse * 0.9})`;
+            ctx.fillRect(x, terrainY - lavaThickness, 1, lavaThickness);
 
-            // Bright core highlight (top 1px)
-            ctx.fillStyle = `rgba(255, 200, 50, ${pulse * 0.9})`;
-            ctx.fillRect(x, terrainY - 4, 1, 1);
+            // Bright molten highlight (top 2px)
+            ctx.fillStyle = `rgba(255, 200, 50, ${pulse * 0.95})`;
+            ctx.fillRect(x, terrainY - lavaThickness, 1, 2);
         }
     }
 
