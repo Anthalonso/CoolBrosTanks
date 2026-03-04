@@ -321,14 +321,15 @@ class Game {
 
         // Check if projectiles are done and turn should end
         if (this.state === GAME_STATES.PROJECTILE_FLYING && this.projectiles.length === 0) {
-            // Small delay before next turn
+            // Longer delay when lava pool is active so player can see it burn
+            const turnDelay = this.lavaPools.length > 0 ? 2000 : 1000;
             setTimeout(() => {
                 if (this.checkWinCondition()) {
                     this.state = GAME_STATES.GAME_OVER;
                 } else {
                     this.nextTurn();
                 }
-            }, 1000);
+            }, turnDelay);
             this.state = GAME_STATES.PLAYING;
         }
     }

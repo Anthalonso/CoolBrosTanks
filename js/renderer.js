@@ -160,7 +160,7 @@ class Renderer {
         const ctx = this.ctx;
         const time = Date.now();
         const pulse = 0.6 + 0.4 * Math.sin(time / 150);
-        const lavaThickness = 8;
+        const lavaThickness = 16;
 
         // Draw flame tongues (drawn first so lava body sits on top)
         const flameSpacing = 6;
@@ -170,7 +170,7 @@ class Renderer {
             // Each column gets its own animated phase
             const wave1 = Math.sin(time / 180 + x * 0.25);
             const wave2 = Math.sin(time / 110 + x * 0.4 + 2.0);
-            const height = 12 + (wave1 * 0.5 + 0.5) * 20; // 12–32px tall
+            const height = 24 + (wave1 * 0.5 + 0.5) * 40; // 24–64px tall
             const lean = wave2 * 3;                         // slight horizontal sway
             const alpha = (0.5 + (wave1 * 0.5 + 0.5) * 0.4) * pulse;
 

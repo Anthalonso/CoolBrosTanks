@@ -72,7 +72,7 @@ const WEAPONS = {
 };
 
 // Lava pool constants (Napalm weapon)
-const LAVA_MAX_SPREAD = 120;        // max px from impact center in each direction
+const LAVA_MAX_SPREAD = 240;        // max px from impact center in each direction
 const LAVA_SPREAD_RATE = 2;         // px per frame the pool spreads
 const LAVA_DAMAGE_PER_FRAME = 1;    // HP dealt per frame while tank is in contact
 const LAVA_MAX_CONTACT_DAMAGE = 34; // max HP per single contact exposure
